@@ -1,0 +1,9 @@
+{
+  "cmake.buildDirectory": "/home/ecn/ros2ws/build/lab_auve",
+  "editor.mouseWheelZoom": true,
+  "cmake.configureArgs": ["CMAKE_EXPORT_COMPILE_COMMANDS=1"],
+  "clangd.arguments": [ "-pretty",
+                         "--background-index",
+                         "--compile-commands-dir=/home/ecn/ros2ws/build/lab_auve/"],
+  "clangd.fallbackFlags": ["-std=c++17", "-xc++"],
+}
