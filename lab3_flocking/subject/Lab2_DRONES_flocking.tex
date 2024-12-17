@@ -1,0 +1,184 @@
+\documentclass{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{dirtree}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{1pt}
+\fancyhead[L]{Master 2 CORO-IMARO}
+\fancyhead[R]{Aerial and maritime drones}
+
+\title{DRONES Lab - Part 2: Flocking}
+\author{Mathilde THEUNISSEN \\ mathilde.theunissen@ls2n.fr}
+
+\begin{document}
+\maketitle
+
+\section{Objectives}
+
+\paragraph{}
+The aim of this lab is to implement and analyze Olfati-Saber's flocking algorithm for distributed multi-agent systems in a simplified 2D scenario.
+
+In this lab, you will implement the \textbf{cohesion}, \textbf{separation} and \textbf{alignment} rules to create a flocking behavior. These rules ensure the drones stay connected, move cohesively toward a common goal, and avoid collisions.
+
+Challenge the limits of the algorithm by varying the number of drones, choosing challenging trajectories and adding obstacles in unexpected positions.
+
+This lab is strongly based on the work of Olfati-Saber, outlined in the paper:
+ \textit{R. Olfati-Saber, "Flocking for multi-agent dynamic systems: algorithms and theory," in IEEE Transactions on Automatic Control, vol. 51, no. 3, pp. 401-420, March 2006}. \textbf{Make sure to read this article before attending the lab session.}
+ 
+\paragraph{Deliverables} You will have to submit:
+\begin{itemize}
+ \item a brief report in which you analyze the behavior of your flock.
+ \item your code files.
+\end{itemize}
+ 
+\section{Description of the lab}
+
+\subsection{Run the lab}
+To begin the lab, you need to download the project files from GitHub. Use the following commands in your terminal to clone the repository and navigate to the project directory:
+
+\begin{lstlisting}[language=bash, frame=single]
+git clone https://github.com/mtheuniss/TP_flocking_student.git
+cd TP_flocking_student
+\end{lstlisting}
+
+This will download the git repository. The lab is implemented entirely in Python. To run the program, execute the main.py file either using your preferred code editor or directly from the command line with:
+
+\begin{lstlisting}[frame=single]
+python main.py
+\end{lstlisting}
+
+\subsection{Lab files}
+
+
+Here are the files for this project:
+
+\begin{minipage}{.4\linewidth}
+ \dirtree{%
+.1 TP\_flocking\_student. 
+.2 main.py.
+.2 flock.py.
+.2 drone.py.
+.2 utils.py.
+} 
+\end{minipage}
+\paragraph{}
+You will have mainly to complete some functions in \texttt{flock.py} and in \texttt{drone.py}. The file \texttt{utils.py} provides useful functions that support the lab. This file also contains the flocking parameters. Before implementing any function, make sure it is not already included in this file. 
+
+\section{Implementation}
+
+\subsection{Create the topology of the flock}
+The flocking algorithm is a \textbf{distributed} control approach. Each drone only interacts with its immediate \textbf{neighbors}, determined by a maximum communication/sensing range $r$. This relationship among drones can be modeled as a weighted graph $\mathcal{G}(\mathcal{V}, \mathcal{E})$, where:
+\begin{itemize}
+ \item The vertices $\mathcal{V}$ represent the drones.
+ \item The edges $\mathcal{E}$, representing proximity, connect neighboring drones.
+\end{itemize}
+
+\paragraph{To do:} 
+Implement the function \texttt{get\_adjacency\_matrix} in \texttt{flock.py}, which computes $A=[a_{i,j}]$, the spatial adjacency matrix of this graph. Each element $a_{i,j}$ is computed in the function \texttt{compute\_aij} in the file \texttt{utils.py} which you should complete.\\
+\textbf{Hint:} Refer to Equations 1 and 11 of Olfati-Saber's article.
+
+\paragraph{To do:} 
+Implement the function \texttt{get\_laplacian\_matrix} in \texttt{flock.py} which computes the graph Laplacian.\\
+\textbf{Hint:} The Laplacian is defined in Equation 17.
+
+\subsection{Indicators}
+The group of drones performs flocking if:
+\begin{itemize}
+ \item the group is a \textbf{quasi-flock}. This means that the distance between neighboring drones is almost the desired distance $d$. The \textbf{deviation energy} $E = \frac{1}{1+|\mathcal{E}(q)|}\sum_{i=1}^n\sum_{j\in \mathcal{N}_i }(||q_j-q_i||-d)^2$ measures the deformation of the group from the ideal configuration, where the distance between drones equals $d$. $|\mathcal{E}(q)|$ is the number of edges in the graph and $q_i$ refers to the position of the drone $i$.
+ 
+ \item the group remains \textbf{cohesive}. All drones are then connected and contained within a circle of finite radius. This property can be verified using the \textbf{relative connectivity index} $C = \frac{1}{n-1} \mathrm{rank}(L)$. Since $\mathrm{rank}(L)$ can reach a maximum value of $n-1$, the relative connectivity ranges from 0 to 1. A value of 1 indicates that the graph is connected, while a value of 0 signifies that no drones are connected.
+ The cohesion can also be observed by computing the \textbf{cohesion radius} $R = \max_i ||q_i - q_c||$ which measures the maximum distance of a drone from the group’s centroid $q_c$. 
+ 
+ \item the group reaches a common velocity. The \textbf{velocity mismatch} $K = \frac{1}{2}\sum_{i=1}^n ||p_i - p_c||^2$ indicator computes the difference between the individual velocities $p_i$ and the group velocities $p_c = \frac{1}{n}\sum_j p_j$ (average velocity).
+ 
+\end{itemize}
+
+\paragraph{To do:}
+To analyze the future performances of your flock, implement in the file \texttt{flock.py}:
+\begin{itemize}
+ \item the \textbf{relative connectivity} in the function \texttt{compute\_connectivity()}
+ \item the \textbf{cohesion radius} in the function \texttt{compute\_cohesion\_radius()}
+ \item the \textbf{normalized deviation energy} $\widetilde{E} = \frac{E}{d^2}$ in the function \texttt{compute\_deviation\_energy()}
+ \item the \textbf{normalized velocity mismatch} $\widetilde{K} = \frac{K}{n}$ in the function \texttt{compute\_velocity\_mismatch()}
+\end{itemize}
+
+
+\paragraph{Hint:} The different indicators are given paragraph IX.A, page 18 of Olfati-Saber's article.
+
+\subsection{Drone dynamics}
+Drone dynamics are simplified as double integrators. In \texttt{drone.py}, complete the function \texttt{update\_state}.
+\paragraph{Hint:} Look at the equations of motion in Equation 2.
+
+\subsection{Free-flocking}
+\subsubsection{Reynolds Rules}
+Let's now compute the Reynolds Rules. Each robot $i$ receives as control input an acceleration proportional to an attractive/repulsive force $u_i^\alpha$ such that:
+$$
+u_i^\alpha = c_1^{\alpha} \sum_{j\in \mathcal{N}_i}\phi_\alpha(||q_i - q_j||_\sigma)\mathbf{n}_{ij} + c_2^{\alpha} \sum_{j\in \mathcal{N}_i}a_{ij}\cdot(p_i-p_j)
+$$
+The second term represents the velocity matching term while the first term corresponds to flock separation and alignment.
+
+\paragraph{To do:}
+In \texttt{drone.py}, implement $u_i^\alpha$ in the function \texttt{u\_alpha()}. Then complete the function \texttt{update\_cmd} in order to update the drone control command at each time step.\\
+\textbf{Hint:} This exercise corresponds to the Algorithm 1 presented in Equation 23.
+
+\paragraph{To do:} Modify the initial size of the area where the drones are initialized by changing the following line in \texttt{main.py} (line 18):
+\begin{lstlisting}[language=python, frame=single]
+INIT_AREA_FLOCK = np.array([20,20]) 
+\end{lstlisting}
+Experiment with different box sizes to observe the impact on flocking behavior.
+
+\paragraph{Question:} Test your control law. Is the flock behavior what you expected? Are the Reynolds Rules sufficient to create a flocking behavior? Justify your answer using the 4 indicators.
+
+\subsubsection{Navigation feedback}
+To finish the flocking protocol, we add a navigation feedback term $u_i^\gamma$ such that:
+$$
+u_i^\gamma = - c_1^{\gamma} (q_i - q_r) - c_2^{\gamma}(p_i - p_r)
+$$
+with $q_r$ and $p_r$ respectively a reference position and velocity that is shared with all drones.
+
+\paragraph{To do:}
+In \texttt{drone.py}, implement $u_i^\gamma$ in the function \texttt{u\_gamma()}. Then complete the function \texttt{update\_cmd} with this second attractive force.\\
+\textbf{Hint:} This exercise corresponds to the Algorithm 2 presented in Equation 24.
+
+\paragraph{To do:} Test your flock with different numbers of robots (parameter in \texttt{main.py}) and tune the flocking parameters (in \texttt{utils.py}).
+
+\paragraph{Question:} Test your control law. Is the flocking working? Why?
+
+\subsection{Flocking with obstacle avoidance}
+Let's make our flock reactive to avoid \textbf{convex obstacles}. The key idea is to represent nearby obstacles as virtual kinematic drones positioned at the point on the boundary of the obstacle that is the closest to the nearby drone. A drone and an obstacle are considered as neighbors if their distance is smaller than a threshold $r_{obs}$.\\
+Computation of the neighboring drones and the closest point on the obstacle to a drone is provided. You can check this in the function \texttt{get\_pos\_vel\_virtual\_agent()} in \texttt{obstacle.py} and in the function \texttt{update\_flock} in \texttt{flock.py}.\\ \\
+An additional repulsive $u_i^{\beta}$ force is added to each drone to prevent it from colliding with obstacles.
+$$
+u_i^{\beta} = c_1^{\beta} \sum_{j\in \mathcal{N}_i^{obs}}\phi_\beta(||q_i - \widehat{q}_j||_\sigma)\mathbf{n}_{ij} + c_2^{\beta} \sum_{j\in \mathcal{N}_i^{obs}}a_{ij} \cdot (p_i-\widehat{p}_j)
+$$
+
+\paragraph{To do:}
+In \texttt{drone.py}, implement $u_i^\beta$ in the function \texttt{u\_beta()}. Complete then the function \texttt{update\_cmd} with this repulsive force.\\
+\textbf{Hint:} The final algorithm is presented in Equation 59.
+
+\paragraph{To do:}
+In \texttt{main.py}, uncomment the \textbf{line 10} to add some obstacles:
+\begin{lstlisting}[language=python, frame=single]
+OBSTACLES = [
+    Circle(np.array([15,2]), 2.),
+    Circle(np.array([30,7]), 6.),
+    Wall(np.array([45,15]), 6,20),
+    Wall(np.array([45,-15]), 6,20),
+]
+\end{lstlisting}
+You may change the position of the obstacles and the navigation trajectory by changing in line 16 of \texttt{main.py}:
+\begin{lstlisting}[language=python, frame=single]
+INIT_POSE_FLOCK = np.array([-10,0])
+FINAL_POSE_FLOCK = np.array([70,0])
+\end{lstlisting}
+
+\paragraph{Question:} Analyze the behavior of the flock using the 4 indicators you have computed.
+
+\end{document}
